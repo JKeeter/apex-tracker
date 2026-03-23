@@ -756,7 +756,7 @@ function renderSupps() {
     const today = getDayKey(currentDayOffset);
     const isToday = today === new Date().toISOString().split('T')[0];
     const subtitle = document.getElementById('suppsSubtitle');
-    if (subtitle) subtitle.textContent = isToday ? 'Tap to check off as you take them' : `Viewing ${getDateForOffset(currentDayOffset).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })} (read-only)`;
+    if (subtitle) subtitle.textContent = isToday ? 'Tap to check off as you take them' : `Viewing ${getDateForOffset(currentDayOffset).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}`;
     const content = document.getElementById('suppsContent');
     if (!SUPPLEMENTS) {
         content.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--text-dim);"><p style="font-size:18px;margin-bottom:8px;">No supplement config loaded</p><p>Scan a QR code, or go to Log tab and paste a config URL</p></div>';
@@ -784,7 +784,7 @@ function renderSupps() {
         section.items.forEach((item, idx) => {
             const key = `${today}_${sectionKey}_${slugify(item.name)}`;
             const done = completedSupps[key];
-            const clickable = isDaily && isToday;
+            const clickable = isDaily;
             const dimmed = isHold || isFuture;
 
             html += `<div class="exercise-item ${done ? 'completed' : ''}" ${clickable ? `onclick="toggleSupp('${key}', this)"` : ''} style="${dimmed && !isHold ? 'opacity:0.6;' : ''} ${isHold ? 'border-color:var(--red);border-style:dashed;' : ''} ${!clickable ? 'cursor:default;' : ''}">
