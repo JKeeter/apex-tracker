@@ -1019,17 +1019,14 @@ function renderDay() {
 
 function getAvailableTypes(phase, recommended) {
     const types = [];
-    if (phase === 'phase1') {
-        types.push({ key: 'standard', label: 'Standard (20m)' });
-        types.push({ key: 'light', label: 'Light (10m)' });
-    } else if (phase === 'phase2') {
-        types.push({ key: 'standard', label: 'Standard (20m)' });
-        types.push({ key: 'light', label: 'Light (15m)' });
-        types.push({ key: 'hard', label: 'Hard (22m)' });
-    } else {
-        types.push({ key: 'standard', label: 'Standard (20m)' });
-        types.push({ key: 'mtb', label: 'MTB Prep (20m)' });
-        types.push({ key: 'light', label: 'Light (15m)' });
+    const phaseData = WORKOUTS ? WORKOUTS[phase] : null;
+    if (phaseData) {
+        const typeLabels = { standard: 'Standard', light: 'Light', hard: 'Hard', mtb: 'MTB Prep' };
+        for (const key of Object.keys(phaseData)) {
+            const label = typeLabels[key] || key;
+            const time = phaseData[key].totalTime;
+            types.push({ key, label: `${label} (${time}m)` });
+        }
     }
     types.push({ key: 'rest', label: 'Rest' });
     return types;
