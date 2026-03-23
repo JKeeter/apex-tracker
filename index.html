@@ -817,7 +817,7 @@ function renderSupps() {
     updateSuppsProgress();
 }
 
-const METRICS = JSON.parse(localStorage.getItem('apex_config_metrics') || '{}');
+let METRICS = JSON.parse(localStorage.getItem('apex_config_metrics') || '{}');
 const START_DATE = METRICS.startDate ? new Date(METRICS.startDate + 'T00:00:00') : new Date();
 const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const SHORT_DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
@@ -1308,6 +1308,7 @@ function showImportModal(type, newConfig) {
             localStorage.setItem('apex_config_supplements', JSON.stringify(newConfig.supplements));
             localStorage.setItem('apex_config_metrics', JSON.stringify(newConfig.metrics));
             SUPPLEMENTS = newConfig.supplements;
+            METRICS = newConfig.metrics;
             // Import webhook URL if provided (token stays manual)
             if (newConfig.metrics?.webhookUrl) {
                 setWebhookUrl(newConfig.metrics.webhookUrl);
