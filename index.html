@@ -6,7 +6,9 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Apex">
-    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23667eea' width='100' height='100' rx='20'/><text x='50' y='68' text-anchor='middle' fill='white' font-size='50' font-family='Arial' font-weight='bold'>A</text></svg>">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0f0f13">
     <title>Apex Workout</title>
     <style>
         :root {
@@ -560,6 +562,24 @@
                 Both fields required. The token acts as a password — only requests with the matching token are accepted. Your data is rejected without it.
             </div>
         </div>
+
+        <div style="margin-top:30px;padding-top:20px;border-top:1px solid var(--card-border);">
+            <div class="section-header">
+                <div class="section-icon" style="background:rgba(52,211,153,0.15);">&#x1F4F2;</div>
+                <span class="section-title">Import Config</span>
+            </div>
+            <div class="log-input full-width" style="margin-top:10px;">
+                <label>Paste config URL from QR code</label>
+                <input type="url" id="configUrlInput" placeholder="https://.../#s=... or #w=..." style="font-size:13px;font-weight:400;">
+            </div>
+            <button class="save-btn" onclick="importFromPaste()" style="margin-top:8px;background:var(--green);">Import Config</button>
+            <div id="configStatus" style="font-size:12px;color:var(--text-dim);margin-top:8px;line-height:1.5;padding:0 4px;">
+            </div>
+            <div style="font-size:12px;color:var(--text-dim);margin-top:4px;line-height:1.5;padding:0 4px;">
+                Scan QR code with camera, copy the URL, then paste here.
+                Config is stored on this device only.
+            </div>
+        </div>
     </div>
 
     <div class="tab-content" id="suppsTab">
@@ -748,7 +768,7 @@ function renderSupps() {
     const today = new Date().toISOString().split('T')[0];
     const content = document.getElementById('suppsContent');
     if (!SUPPLEMENTS) {
-        content.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--text-dim);"><p style="font-size:18px;margin-bottom:8px;">No supplement config loaded</p><p>Scan a config QR code to get started</p></div>';
+        content.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--text-dim);"><p style="font-size:18px;margin-bottom:8px;">No supplement config loaded</p><p>Scan a QR code, or go to Log tab and paste a config URL</p></div>';
         return;
     }
     let html = '';
@@ -886,6 +906,7 @@ function init() {
     renderSupps();
     renderHistory();
     updateStreak();
+    updateConfigStatus();
 }
 
 function changeDay(delta) {
@@ -944,7 +965,7 @@ function renderDay() {
 
     // Get workout data
     if (!WORKOUTS) {
-        document.getElementById('workoutContent').innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--text-dim);"><p style="font-size:18px;margin-bottom:8px;">No workout config loaded</p><p>Scan a config QR code to get started</p></div>';
+        document.getElementById('workoutContent').innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--text-dim);"><p style="font-size:18px;margin-bottom:8px;">No workout config loaded</p><p>Scan a QR code, or go to Log tab and paste a config URL</p></div>';
         return;
     }
     let workout;
@@ -1290,6 +1311,12 @@ function showImportModal(type, newConfig) {
             localStorage.setItem('apex_config_supplements', JSON.stringify(newConfig.supplements));
             localStorage.setItem('apex_config_metrics', JSON.stringify(newConfig.metrics));
             SUPPLEMENTS = newConfig.supplements;
+            // Import webhook URL if provided (token stays manual)
+            if (newConfig.metrics?.webhookUrl) {
+                setWebhookUrl(newConfig.metrics.webhookUrl);
+                const wuEl = document.getElementById('webhookUrl');
+                if (wuEl) wuEl.value = SHEETS_WEBHOOK_URL;
+            }
         } else {
             localStorage.setItem('apex_config_workouts', JSON.stringify(newConfig));
             WORKOUTS = newConfig;
@@ -1300,6 +1327,7 @@ function showImportModal(type, newConfig) {
         renderSupps();
         renderDay();
         renderHistory();
+        updateConfigStatus();
     };
 }
 
@@ -1330,6 +1358,50 @@ async function detectConfigFragment() {
     }
 }
 
+async function importFromPaste() {
+    const input = document.getElementById('configUrlInput');
+    const status = document.getElementById('configStatus');
+    const url = input.value.trim();
+    if (!url) { status.textContent = 'Please paste a config URL first.'; status.style.color = 'var(--red)'; return; }
+
+    // Extract fragment from URL
+    const hashIdx = url.indexOf('#');
+    if (hashIdx === -1) { status.textContent = 'No config data found in URL (missing # fragment).'; status.style.color = 'var(--red)'; return; }
+
+    const param = url.substring(hashIdx + 1);
+    let type, data;
+    if (param.startsWith('s=')) { type = 'supplements'; data = param.substring(2); }
+    else if (param.startsWith('w=')) { type = 'workouts'; data = param.substring(2); }
+    else { status.textContent = 'URL must contain #s= (supplements) or #w= (workouts).'; status.style.color = 'var(--red)'; return; }
+
+    try {
+        const config = await decompressConfig(data);
+        showImportModal(type, config);
+        input.value = '';
+        status.textContent = '';
+    } catch (e) {
+        console.error('Import failed:', e);
+        status.textContent = 'Failed to decode config. URL may be incomplete.';
+        status.style.color = 'var(--red)';
+    }
+}
+
+function updateConfigStatus() {
+    const el = document.getElementById('configStatus');
+    if (!el) return;
+    const hasSupps = !!localStorage.getItem('apex_config_supplements');
+    const hasWorkouts = !!localStorage.getItem('apex_config_workouts');
+    const hasMetrics = !!localStorage.getItem('apex_config_metrics');
+    const parts = [];
+    parts.push(hasSupps ? '✓ Supplements' : '✗ Supplements');
+    parts.push(hasWorkouts ? '✓ Workouts' : '✗ Workouts');
+    parts.push(hasMetrics ? '✓ Metrics' : '✗ Metrics');
+    el.innerHTML = parts.map(p => `<span style="color:${p.startsWith('✓') ? 'var(--green)' : 'var(--red)'};">${p}</span>`).join(' &nbsp; ');
+}
+
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js');
+}
 init();
 detectConfigFragment();
 </script>
