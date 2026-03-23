@@ -916,6 +916,11 @@ scheduleMidnightRefresh();
 // Also refresh when app is foregrounded (phone wake / tab switch)
 document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
+        // Check for app updates
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistration().then(reg => { if (reg) reg.update(); });
+        }
+        // Check for day change
         const now = new Date().toISOString().split('T')[0];
         if (now !== _lastDateStr) {
             _lastDateStr = now;
@@ -1414,7 +1419,34 @@ function updateConfigStatus() {
 }
 
 if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js');
+    navigator.serviceWorker.register('sw.js').then(reg => {
+        // Check for updates on every launch
+        reg.update();
+
+        // When a new SW is waiting, tell it to activate immediately
+        function promptUpdate(worker) {
+            worker.postMessage({ type: 'SKIP_WAITING' });
+        }
+        if (reg.waiting) promptUpdate(reg.waiting);
+
+        reg.addEventListener('updatefound', () => {
+            const newWorker = reg.installing;
+            newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    promptUpdate(newWorker);
+                }
+            });
+        });
+    });
+
+    // When the new SW takes over, reload the page to get fresh assets
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!refreshing) {
+            refreshing = true;
+            window.location.reload();
+        }
+    });
 }
 
 // If opened in Safari (not standalone) with a config fragment, show copy instructions instead of the app
