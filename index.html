@@ -897,6 +897,33 @@ function init() {
     updateConfigStatus();
 }
 
+// --- Auto day-cycle: re-init when the calendar day changes ---
+let _lastDateStr = new Date().toISOString().split('T')[0];
+
+function scheduleMidnightRefresh() {
+    const now = new Date();
+    const midnight = new Date(now);
+    midnight.setHours(24, 0, 1, 0); // 1 second past next midnight
+    const ms = midnight - now;
+    setTimeout(() => {
+        _lastDateStr = new Date().toISOString().split('T')[0];
+        init();
+        scheduleMidnightRefresh();
+    }, ms);
+}
+scheduleMidnightRefresh();
+
+// Also refresh when app is foregrounded (phone wake / tab switch)
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+        const now = new Date().toISOString().split('T')[0];
+        if (now !== _lastDateStr) {
+            _lastDateStr = now;
+            init();
+        }
+    }
+});
+
 function changeDay(delta) {
     currentDayOffset = Math.max(0, Math.min(83, currentDayOffset + delta));
     currentDayType = null;
