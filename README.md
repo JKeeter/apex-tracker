@@ -2,96 +2,35 @@
 
 ## Overview
 
-Apex is a Progressive Web App (PWA) that runs on your iPhone as a home screen app. It tracks your 12-week exercise protocol, daily supplement regimen, and health metrics — with automatic sync to Google Sheets.
+Apex is a Progressive Web App (PWA) for iPhone that tracks daily workouts, supplements, and health metrics with Google Sheets sync. It runs full-screen from your Home Screen with no browser chrome.
 
-**Four tabs:**
-1. **Workout** — Today's exercises with tap-to-complete checkboxes
-2. **Supps** — Full supplement regimen (morning, evening, on hold, future tiers)
-3. **Log** — Daily metrics: weight, energy, HR, sleep, alcohol, notes
-4. **Progress** — Weight loss tracking and history
+**Tabs:** Workout | Supps | Log | Progress
 
 ---
 
-## Architecture
+## How It Works
 
-The app shell (hosted on GitHub Pages) contains **no personal health information**. All PHI — supplements, prescriptions, metrics, workout plans — lives in `localStorage` on your device only.
+The app on GitHub Pages contains **zero personal health information**. Your supplements, prescriptions, workout plans, and metrics live only in `localStorage` on your phone. Config is imported via QR code URLs — the data travels in the URL fragment (`#s=...` or `#w=...`), which is **never sent to any server**.
 
-Config is split into two independent domains:
-- **Supplements** — prescriptions, supplement protocol, personal metrics (weight, start date), webhook URL
-- **Workouts** — exercise phases and routines
-
-Each is imported separately via QR code or pasted URL. The config data is compressed and encoded in the URL fragment (`#s=...` or `#w=...`), which **never leaves your device** — URL fragments are not sent to any server.
+Two independent config domains:
+- **Supplements** (`#s=`) — prescriptions, supplement protocol, metrics (weight, dates), webhook URL
+- **Workouts** (`#w=`) — exercise phases and routines
 
 ---
 
-## Part 1: Initial Setup on iPhone
+## Complete Setup (Start to Finish)
 
-### Step 1: Add to Home Screen
-
-1. Open https://jkeeter.github.io/apex-tracker/ in **Safari** on your iPhone
-2. Tap **Share** (square with arrow) > **Add to Home Screen** > Name it "Apex" > **Add**
-3. The app icon appears on your home screen — it will show an empty state until you import config
-
-### Step 2: Generate QR Codes (on your Mac)
+### 1. Prerequisites (Mac)
 
 ```bash
-# Install dependency (one time)
 pip3 install "qrcode[pil]"
-
-# Generate QR for supplements + metrics
-python3 generate_qr.py supplements
-
-# Generate QR for workouts
-python3 generate_qr.py workouts
 ```
 
-Each command generates a QR code image and prints the full URL to your terminal.
+### 2. Create Your Config Files
 
-### Step 3: Import Config into the App
+Both files go in the project directory alongside `generate_qr.py`. They are gitignored and never committed.
 
-**Important:** You must import config from **within the standalone app** (opened from Home Screen), not from Safari. Safari and standalone apps have separate storage on iOS.
-
-1. Open the **Apex app from your Home Screen**
-2. Go to the **Log** tab
-3. Scroll down to **Import Config**
-4. On your Mac, scan the supplements QR code with your iPhone camera — this opens a URL in Safari
-5. **Copy the URL** from Safari's address bar
-6. Go back to the Apex app > paste the URL into the Import Config field > tap **Import Config**
-7. Confirm the import in the modal that appears
-8. Repeat steps 4-7 for the workouts QR code
-
-**Alternative:** Instead of scanning, you can copy the URL printed in your terminal and send it to yourself via iMessage, then copy-paste it in the app.
-
-### Step 4: Enter Google Sheets Token
-
-1. In the **Log** tab, scroll to **Google Sheets Sync**
-2. The webhook URL imports automatically with supplements config (if you set it in `config_supplements.json`)
-3. Enter your **Secret Token** manually — this is never included in the config file for security
-
-### Verify
-
-After import, the Import Config section shows status indicators:
-- **Supplements** / **Workouts** / **Metrics** — each shows a green checkmark when loaded
-
----
-
-## Part 2: Updating Config
-
-When supplements or workouts change:
-
-1. Edit the config JSON file on your Mac
-2. Run `python3 generate_qr.py supplements` (or `workouts`) — only regenerate what changed
-3. Scan QR > copy URL > paste in app's Import Config field
-4. The app shows a diff of what changed (added/removed/modified items)
-5. Tap **Update** — your check-off history is preserved
-
----
-
-## Part 3: Creating Config Files
-
-These files live on your Mac and are **not committed to git** (listed in `.gitignore`).
-
-### config_supplements.json
+**config_supplements.json** — your supplements, metrics, and Google Sheets webhook URL:
 
 ```json
 {
@@ -107,7 +46,7 @@ These files live on your Mac and are **not committed to git** (listed in `.gitig
       "icon": "rx",
       "emoji": "&#x1F48A;",
       "items": [
-        { "name": "Medication Name", "dose": "10mg", "detail": "With evening meal", "time": "Evening" }
+        { "name": "Medication Name", "dose": "10mg", "detail": "Instructions", "time": "Evening" }
       ]
     },
     "morning": {
@@ -122,13 +61,11 @@ These files live on your Mac and are **not committed to git** (listed in `.gitig
 }
 ```
 
-**Valid supplement section keys:** `rx`, `morning`, `evening`, `asNeeded`, `onHold`, `tier2`, `tier2T`, `future`
+Section keys: `rx`, `morning`, `evening`, `asNeeded`, `onHold`, `tier2`, `tier2T`, `future`
+Each section needs: `name`, `icon` (rx/pill/moon/hold/later), `emoji` (HTML entity), `items[]`
+Each item needs: `name`, `dose`, `detail`, `time`
 
-Each section requires: `name`, `icon` (rx/pill/moon/hold/later), `emoji` (HTML entity), and `items` array.
-
-Each item requires: `name`, `dose`, `detail`, `time`.
-
-### config_workouts.json
+**config_workouts.json** — your exercise phases:
 
 ```json
 {
@@ -151,167 +88,125 @@ Each item requires: `name`, `dose`, `detail`, `time`.
 }
 ```
 
-**Phases:** `phase1`, `phase2`, `phase3` — auto-selected by week number from start date.
+Phases: `phase1`, `phase2`, `phase3` (auto-selected by week from start date)
+Types: `standard`, `light`, `hard` (phase 2+), `mtb` (phase 3 week 8+)
+Section icons: `warmup`, `bag`, `kb`, `core`, `cool`
 
-**Workout types per phase:** `standard`, `light`, `hard` (phase 2+), `mtb` (phase 3, week 8+).
+### 3. Set Up Google Sheets (Optional)
 
-Each section requires: `name`, `icon` (warmup/bag/kb/core/cool), `duration`, `exercises` array.
+1. Create a blank spreadsheet at [sheets.google.com](https://sheets.google.com), name it "Apex Health Tracker"
+2. **Extensions > Apps Script** — paste contents of `google_apps_script.js`
+3. Change `SECRET_TOKEN` at the top to your own passphrase
+4. **Save**, then **Deploy > New deployment > Web app**
+5. Set **Execute as:** Me, **Who has access:** Anyone
+6. Copy the deployed URL and paste it into `config_supplements.json` as the `webhookUrl` value
 
----
+### 4. Generate QR Codes (Mac)
 
-## Part 4: Google Sheets Sync Setup
+```bash
+python3 generate_qr.py supplements    # creates qr_supplements.png, prints URL
+python3 generate_qr.py workouts       # creates qr_workouts.png, prints URL
+```
 
-### Step 1: Create the Google Sheet
+### 5. Add Apex to Your iPhone Home Screen
 
-1. Go to [sheets.google.com](https://sheets.google.com)
-2. Click **Blank spreadsheet**
-3. Name it: **Apex Health Tracker**
+1. Open **https://jkeeter.github.io/apex-tracker/** in **Safari** on your iPhone
+2. Tap **Share** (square with arrow) > **Add to Home Screen** > name it "Apex" > **Add**
+3. The app will show an empty state — that's expected
 
-### Step 2: Add the Apps Script
+### 6. Import Config (Two QR Codes)
 
-1. In the Google Sheet, go to **Extensions > Apps Script**
-2. Delete any existing code in the editor
-3. Copy the contents of `google_apps_script.js` and paste into the editor
-4. Change the secret token at the top:
-   ```javascript
-   var SECRET_TOKEN = 'CHANGE_ME_TO_SOMETHING_UNIQUE';
-   ```
-5. Click **Save**
+For each QR code (supplements, then workouts):
 
-### Step 3: Deploy as Web App
+1. **Scan the QR code** with your iPhone camera — it opens in Safari
+2. Safari shows a **"Copy URL to Clipboard"** screen (the app is hidden — this is intentional)
+3. Tap **Copy URL to Clipboard**
+4. Open **Apex from your Home Screen**
+5. Go to the **Log** tab > scroll to **Import Config**
+6. Paste the URL > tap **Import Config**
+7. Review the import modal > tap **Import**
 
-1. Click **Deploy > New deployment**
-2. Select type: **Web app**
-3. Set **Execute as:** Me, **Who has access:** Anyone
-4. Click **Deploy** and **copy the URL**
-5. Paste this URL into the `webhookUrl` field in `config_supplements.json`
+**Why this two-step process?** iOS gives Safari and Home Screen apps separate storage. QR codes always open in Safari. So you copy the URL in Safari and paste it in the standalone app. It takes 10 seconds per config.
 
-**Why "Anyone"?** The PWA runs client-side without Google auth. The secret token protects against unauthorized access.
+**Alternative (no QR):** Copy the URL printed in your terminal on Mac > iMessage it to yourself > copy on iPhone > paste in app.
 
-### Step 4: Connect
+### 7. Enter Google Sheets Token
 
-1. Regenerate supplements QR: `python3 generate_qr.py supplements`
-2. Import into app (webhook URL comes through automatically)
-3. Enter your **Secret Token** in the Log tab (token is never in the config file)
+1. In the Apex app, go to **Log** tab > **Google Sheets Sync**
+2. The webhook URL should already be filled in (imported with supplements config)
+3. Enter your **Secret Token** — the same passphrase from step 3
+4. Token is never stored in any file, only in the app on your phone
 
-### Step 5: Verify
+### 8. Verify Everything Works
 
-1. Enter a test weight and energy in the Log tab
-2. Tap **Save Today's Log**
-3. Button should flash **"Saved + Synced!"** (green)
-4. Check your Google Sheet — entry should appear in the Daily Log tab
-
----
-
-## Part 5: Daily Usage
-
-### Morning
-1. Open Apex from Home Screen
-2. **Supps** tab — tap each morning supplement as you take it
-3. **Workout** tab — see today's exercises, tap to complete. Switch to **Light** if tired.
-
-### Evening
-1. **Supps** tab — tap evening supplements
-2. **Log** tab — enter weight, energy, HR, sleep, alcohol, notes
-3. Tap **Save Today's Log** — saves locally + syncs to Sheets
-
-### Progress
-- **Progress** tab shows weight tracking and history of logged days
+- **Workout tab** shows today's exercises with correct durations
+- **Supps tab** shows your full supplement protocol
+- **Log tab** > Import Config section shows green checkmarks for Supplements, Workouts, and Metrics
+- Enter a test weight + energy > **Save Today's Log** > button flashes **"Saved + Synced!"** (green)
+- Check your Google Sheet — entry appears in the Daily Log tab
 
 ---
 
-## Part 6: Exercise Protocol
+## Updating Config
 
-### Phases (Auto-Selected by Date)
+When supplements or workouts change:
 
-| Weeks | Phase | Focus | Duration |
-|-------|-------|-------|----------|
-| 1-2 | Phase 1 — Foundation | Light movement, rebuild habits | 20 min |
-| 3-4 | Phase 2 — Intensity | Progressive overload, harder combos | 20 min |
-| 5-12 | Phase 3 — Full Capacity | High intensity + MTB prep (Week 8+) | 20 min |
+1. Edit the config JSON on your Mac
+2. Regenerate only the changed QR: `python3 generate_qr.py supplements`
+3. Scan QR > **Copy URL** in Safari > paste in Apex app > tap **Import Config**
+4. The app shows a diff (added/removed/changed items)
+5. Tap **Update** — check-off history is preserved
 
-### Weekly Schedule
+---
 
-| Day | Weeks 1-2 | Weeks 3-4 | Weeks 5-7 | Weeks 8-12 |
-|-----|-----------|-----------|-----------|------------|
-| Mon | Standard | Standard | Standard | Standard |
-| Tue | Light | Light | Standard | MTB |
-| Wed | Standard | Standard | Standard | Standard |
-| Thu | Light | Light | Standard | MTB |
-| Fri | Standard | Standard | Standard | Standard |
-| Sat | Rest | Hard | Hard | Hard |
-| Sun | Rest | Rest | Rest | Rest |
+## Daily Usage
 
-### Workout Types
-
-- **Standard** — Full protocol (bag work + kettlebell + core)
-- **Light** — Reduced intensity/duration for recovery days
-- **Hard** — Extended intensity with more rounds
-- **MTB** — Leg + core emphasis for mountain bike prep (Week 8+)
-- **Rest** — Recovery day
+**Morning:** Supps tab — tap supplements as you take them. Workout tab — complete exercises.
+**Evening:** Supps tab — evening supplements. Log tab — weight, energy, HR, sleep, alcohol, notes > Save.
+**Anytime:** Progress tab — weight tracking and history.
 
 ---
 
 ## File Structure
 
 ```
-apex-tracker/                      (public GitHub repo — no PHI)
-├── index.html                     # PWA app shell
-├── manifest.json                  # PWA manifest
-├── sw.js                          # Service worker (offline caching)
-├── icon-192.png                   # App icon (192x192)
-├── icon-512.png                   # App icon (512x512)
-├── generate_qr.py                 # QR code generator script
-├── google_apps_script.js          # Google Sheets backend
-├── .gitignore                     # Excludes config + QR files
-├── README.md                      # This file
+apex-tracker/
+├── index.html                  # PWA app shell (no PHI)
+├── manifest.json               # PWA manifest
+├── sw.js                       # Service worker (offline caching)
+├── icon-192.png / icon-512.png # App icons
+├── generate_qr.py              # QR code generator
+├── google_apps_script.js       # Google Sheets backend
+├── .gitignore
+├── README.md
 │
-├── config_supplements.json        # YOUR supplements + metrics (gitignored)
-├── config_workouts.json           # YOUR workout plan (gitignored)
-├── qr_supplements.png             # Generated QR code (gitignored)
-└── qr_workouts.json               # Generated QR code (gitignored)
+├── config_supplements.json     # YOUR config (gitignored)
+├── config_workouts.json        # YOUR config (gitignored)
+├── qr_supplements.png          # Generated QR (gitignored)
+└── qr_workouts.png             # Generated QR (gitignored)
 ```
 
 ---
 
 ## Troubleshooting
 
-### Empty app after adding to Home Screen
-This is expected. Safari and standalone apps have separate localStorage on iOS. You must import config **from within the standalone app** using the paste import in the Log tab.
-
-### "No supplement config loaded" / "No workout config loaded"
-Go to Log tab > Import Config > paste your config URL and tap Import.
-
-### Config import fails
-- Make sure you copied the **entire URL** including the `#s=...` or `#w=...` fragment
-- The URL can be very long — double-check nothing was truncated when copying
-
-### "Saved locally (no Sheets link)"
-- Check both webhook URL and token are filled in (Log tab > Google Sheets Sync)
-- Webhook URL imports with supplements config; token must be entered manually
-
-### Data not appearing in Google Sheet
-- Check the token matches exactly between the app and Apps Script
-- Check the deployment is set to "Anyone" access
-- Open Apps Script > Executions tab for error logs
-
-### Lost data on phone
-- Don't clear Safari website data (Settings > Safari > Clear History)
-- Config and check-off data live in the standalone app's localStorage
-- For backup, use Google Sheets sync
-
-### Updating the Apps Script
-1. Open Google Sheet > Extensions > Apps Script
-2. Make changes > Save
-3. Deploy > Manage deployments > pencil icon > New version > Deploy
+| Problem | Fix |
+|---------|-----|
+| Empty app after Add to Home Screen | Expected. Import config via Log tab > Import Config. |
+| QR opens in Safari, not the app | Expected. Tap "Copy URL", then paste in standalone app. |
+| "No supplement/workout config loaded" | Log tab > Import Config > paste URL > Import. |
+| Config import fails | Ensure full URL was copied including the `#s=...` or `#w=...` fragment. |
+| "Saved locally (no Sheets link)" | Check webhook URL + token in Log tab. Webhook imports with supplements; token is manual. |
+| Google Sheet not updating | Verify token matches between app and Apps Script. Check Apps Script > Executions for errors. |
+| Lost data after clearing Safari | Don't clear Safari website data. Config lives in the standalone app's storage. Use Sheets sync for backup. |
 
 ---
 
-## Security Notes
+## Security
 
-- The app shell on GitHub Pages contains **zero PHI** — it's a generic tracker
-- All personal data lives in `localStorage` on your device only
-- Config data in QR codes uses URL fragments (`#`), which are **never sent to any server**
-- The Google Sheets webhook URL is in your config file (gitignored) but the **token is never stored in any file**
-- Google Sheets data is private to your Google account, protected by the secret token
-- Config files and QR code images are gitignored and never committed
+- App shell on GitHub Pages: **zero PHI**
+- All personal data: `localStorage` on your device only
+- QR/URL config data: URL fragments — **never sent to any server**
+- Webhook URL: in config file (gitignored), imported with supplements
+- Secret token: **never in any file** — entered manually, stored only on device
+- Google Sheets: private to your Google account, protected by token
