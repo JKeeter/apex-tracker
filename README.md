@@ -2,17 +2,26 @@
 
 ## Overview
 
-Apex is an AI-powered men's health optimization and longevity coaching system. At its core, it pairs Claude with a comprehensive system prompt (`longevity_coach_system_prompt.md`) to deliver personalized, evidence-informed coaching across nutrition, supplementation, hormone optimization, peptide therapy, training, and lifestyle — tailored to the individual's labs, history, goals, and risk tolerance.
+Apex is an AI-powered men's health optimization and longevity coaching system. At its core, it pairs Claude AI with a comprehensive system prompt (`longevity_coach_system_prompt.md`) to deliver personalized, evidence-informed coaching across nutrition, supplementation, hormone optimization, peptide therapy, training, and lifestyle — tailored to the individual's labs, history, goals, and risk tolerance.
 
-The coaching relationship is the product. The user has ongoing conversations with Claude-as-Apex to build and iterate on their health protocol, interpret lab work, adjust supplement stacks, design training programs, and troubleshoot issues as they arise. **Claude remembers every conversation**, so each session picks up where the last one left off — your full history, protocol, labs, and progress are always in context.
+---
+The coaching relationship is the product. The user has ongoing conversations with Claude-as-Apex to build and iterate on their health protocol, interpret lab work, adjust supplement stacks, design training programs, and troubleshoot issues as they arise. **Claude remembers every conversation**, so each session picks up where the last one left off — your full history, protocol, labs, and progress are always in context. Depending on your opt-in preferences, and Claude account level, your conversations can be on their servers for zero to 30 days to 5 years. For the Pro account, 30 days of the conversations are stored by Anthropic, then deleted.  For Enterprise accounts, your admin can configure zero data retention, but that is not available for other tiers.  The health data memories are permanently stored on your Mac until you delete them: 
+```
+  ~/.claude/projects/Users/projects/<username>-<project location>/memory/
+  ├── MEMORY.md                        (index file)
+  ├── user_profile.md
+  ├── health_optimization_tracker.md
+  ├── collaboration_approach.md
+  ├── resources_and_tracking.md
+  ├── project_purpose.md
+  └── feedback_readme_protection.md
+```
 
 ### Data Collection: Apex Tracker PWA (Optional)
 
 The project also includes an optional Progressive Web App (PWA) that runs on iPhone. The tracker collects daily data — workout completion, supplement adherence, weight, energy, sleep, and other metrics — and syncs it to Google Sheets. That data can then be imported into coaching conversations for precise data points and progress monitoring.
 
 **The tracker is a nice-to-have, not a requirement.** Apex works fully without it — Claude maintains your complete coaching history across conversations. The PWA just adds structured daily data collection if you want granular tracking.
-
-**Tabs:** Workout | Supps | Log | Progress
 
 ---
 
