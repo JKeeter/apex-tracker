@@ -1,4 +1,4 @@
-const CACHE_NAME = 'apex-v2';
+const CACHE_NAME = 'apex-v3';
 const ASSETS = [
   './',
   './index.html',
@@ -21,8 +21,15 @@ self.addEventListener('activate', e => {
   self.clients.claim();
 });
 
+// Network-first: try fresh content, fall back to cache for offline use
 self.addEventListener('fetch', e => {
   e.respondWith(
-    caches.match(e.request).then(cached => cached || fetch(e.request))
+    fetch(e.request)
+      .then(response => {
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
+        return response;
+      })
+      .catch(() => caches.match(e.request))
   );
 });
