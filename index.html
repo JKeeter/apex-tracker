@@ -1399,8 +1399,60 @@ function updateConfigStatus() {
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js');
 }
-init();
-detectConfigFragment();
+
+// If opened in Safari (not standalone) with a config fragment, show copy instructions instead of the app
+const hasConfigFragment = window.location.hash && (window.location.hash.startsWith('#s=') || window.location.hash.startsWith('#w='));
+const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+
+if (hasConfigFragment && !isStandalone) {
+    // Running in Safari with config data — show copy instructions, hide app
+    const configType = window.location.hash.startsWith('#s=') ? 'Supplements' : 'Workouts';
+    document.querySelector('.app').style.display = 'none';
+    document.querySelector('.nav-bar').style.display = 'none';
+
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--bg);';
+    overlay.innerHTML = `
+        <div style="text-align:center;max-width:340px;">
+            <div style="font-size:48px;margin-bottom:16px;">&#x1F4CB;</div>
+            <div style="font-size:22px;font-weight:700;color:var(--text-bright);margin-bottom:12px;">
+                ${configType} Config Ready
+            </div>
+            <div style="font-size:15px;color:var(--text-dim);line-height:1.6;margin-bottom:24px;">
+                This URL contains your config data. Copy it, then open <strong style="color:var(--text-bright);">Apex</strong> from your Home Screen and paste it in the <strong style="color:var(--text-bright);">Log</strong> tab under <strong style="color:var(--text-bright);">Import Config</strong>.
+            </div>
+            <button id="copyConfigUrl" style="width:100%;padding:14px;border-radius:12px;border:none;background:var(--accent);color:white;font-size:16px;font-weight:600;cursor:pointer;">
+                Copy URL to Clipboard
+            </button>
+            <div id="copyStatus" style="font-size:13px;color:var(--green);margin-top:12px;min-height:20px;"></div>
+            <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--card-border);font-size:13px;color:var(--text-dim);line-height:1.5;">
+                Don't have Apex on your Home Screen yet?<br>
+                Tap <strong style="color:var(--text-bright);">Share</strong> &#x2197; then <strong style="color:var(--text-bright);">Add to Home Screen</strong>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+
+    document.getElementById('copyConfigUrl').onclick = async () => {
+        try {
+            await navigator.clipboard.writeText(window.location.href);
+            document.getElementById('copyStatus').textContent = 'Copied! Now open Apex from your Home Screen.';
+        } catch (e) {
+            // Fallback for clipboard API failure
+            const ta = document.createElement('textarea');
+            ta.value = window.location.href;
+            ta.style.cssText = 'position:fixed;opacity:0;';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            document.getElementById('copyStatus').textContent = 'Copied! Now open Apex from your Home Screen.';
+        }
+    };
+} else {
+    init();
+    detectConfigFragment();
+}
 </script>
 </body>
 </html>
