@@ -15,9 +15,10 @@ def main():
 
     mode = sys.argv[1]
     script_dir = os.path.dirname(os.path.abspath(__file__))
+    workout_dir = os.path.join(script_dir, "workout")
 
-    config_file = os.path.join(script_dir, f"config_{mode}.json")
-    output_file = os.path.join(script_dir, f"qr_{mode}.png")
+    config_file = os.path.join(workout_dir, f"config_{mode}.json")
+    output_file = os.path.join(workout_dir, f"qr_{mode}.png")
     fragment_param = 's' if mode == 'supplements' else 'w'
 
     if not os.path.exists(config_file):
