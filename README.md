@@ -4,11 +4,13 @@
 
 Apex is an AI-powered men's health optimization and longevity coaching system. At its core, it pairs Claude with a comprehensive system prompt (`longevity_coach_system_prompt.md`) to deliver personalized, evidence-informed coaching across nutrition, supplementation, hormone optimization, peptide therapy, training, and lifestyle — tailored to the individual's labs, history, goals, and risk tolerance.
 
-The coaching relationship is the product. The user has ongoing conversations with Claude-as-Apex to build and iterate on their health protocol, interpret lab work, adjust supplement stacks, design training programs, and troubleshoot issues as they arise.
+The coaching relationship is the product. The user has ongoing conversations with Claude-as-Apex to build and iterate on their health protocol, interpret lab work, adjust supplement stacks, design training programs, and troubleshoot issues as they arise. **Claude remembers every conversation**, so each session picks up where the last one left off — your full history, protocol, labs, and progress are always in context.
 
-### Data Collection: Apex Tracker PWA
+### Data Collection: Apex Tracker PWA (Optional)
 
-To close the feedback loop, the project includes a Progressive Web App (PWA) that runs on iPhone. The tracker collects daily data — workout completion, supplement adherence, weight, energy, sleep, and other metrics — and syncs it to Google Sheets. That data can then be imported into the next coaching conversation, giving Apex real context about what's actually happening day-to-day.
+The project also includes an optional Progressive Web App (PWA) that runs on iPhone. The tracker collects daily data — workout completion, supplement adherence, weight, energy, sleep, and other metrics — and syncs it to Google Sheets. That data can then be imported into coaching conversations for precise data points and progress monitoring.
+
+**The tracker is a nice-to-have, not a requirement.** Apex works fully without it — Claude maintains your complete coaching history across conversations. The PWA just adds structured daily data collection if you want granular tracking.
 
 **Tabs:** Workout | Supps | Log | Progress
 
@@ -20,9 +22,9 @@ The first step is a conversation with Claude using the Apex system prompt. Durin
 
 1. **Assess your baseline** — age, goals, current health status, symptoms, training history, diet, supplements, medications, sleep, stress, recent lab work, budget, and risk tolerance
 2. **Design your protocol** — tiered recommendations (Tier 1: foundations, Tier 2: optimization, Tier 3: advanced), including specific supplements with dosages, workout programming adapted to your constraints, nutrition targets, and monitoring plan
-3. **Generate the tracker config files** — as part of building your protocol, Apex creates the `config_supplements.json` and `config_workouts.json` files that drive the PWA tracker. These JSON files encode your personalized supplement stack, workout phases, metrics targets, and Google Sheets webhook URL
+3. **Remember everything** — Claude saves your profile, protocol, labs, and progress to memory so every future conversation has full context. No need to repeat yourself.
 
-This is the core loop: **coaching conversation → protocol → config files → daily tracking → data back into next conversation**.
+This is the core loop: **coaching conversation → protocol → memory → next conversation picks up where you left off**. If you also set up the tracker (below), structured daily data feeds back in too.
 
 ---
 
@@ -44,9 +46,11 @@ Two independent config domains:
 pip3 install "qrcode[pil]"
 ```
 
-### 2. Create Your Config Files (via Apex coaching conversation)
+### 2. Create Your Config Files (Optional — via Apex coaching conversation)
 
-During your initial coaching conversation, ask Apex to generate these files based on your protocol. Both files go in the project directory alongside `generate_qr.py`. They are gitignored and never committed.
+> **Skip steps 2–7 if you don't need the tracker PWA.** Apex coaching works fully without the app — Claude remembers your protocol and progress across conversations. The steps below are only needed if you want the daily tracking app on your phone.
+
+During your initial coaching conversation, ask Apex to generate these files based on your protocol. Both files go in the `workout/` subdirectory. They are gitignored and never committed.
 
 **config_supplements.json** — your supplements, metrics, and Google Sheets webhook URL:
 
@@ -110,7 +114,7 @@ Phases: `phase1`, `phase2`, `phase3` (auto-selected by week from start date)
 Types: `standard`, `light`, `hard` (phase 2+), `mtb` (phase 3 week 8+)
 Section icons: `warmup`, `bag`, `kb`, `core`, `cool`
 
-### 3. Set Up Google Sheets - (Optional if you aren't going to use the tracker or manually track changes)
+### 3. Set Up Google Sheets (Optional)
 
 1. Create a blank spreadsheet at [sheets.google.com](https://sheets.google.com), name it "Apex Health Tracker"
 2. **Extensions > Apps Script** — paste contents of `google_apps_script.js`
@@ -201,10 +205,11 @@ health/
 ├── google_apps_script.js       # Google Sheets backend
 ├── .gitignore
 │
-├── config_supplements.json     # YOUR config (gitignored, generated by Apex)
-├── config_workouts.json        # YOUR config (gitignored, generated by Apex)
-├── qr_supplements.png          # Generated QR (gitignored)
-└── qr_workouts.png             # Generated QR (gitignored)
+└── workout/
+    ├── config_supplements.json # YOUR config (gitignored, generated by Apex)
+    ├── config_workouts.json    # YOUR config (gitignored, generated by Apex)
+    ├── qr_supplements.png      # Generated QR (gitignored)
+    └── qr_workouts.png         # Generated QR (gitignored)
 ```
 
 ---
