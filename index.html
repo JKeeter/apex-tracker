@@ -670,25 +670,10 @@ async function syncWorkoutCompletion() {
     const phase = getPhase(week);
     const dayType = currentDayType || getRecommendedType(week, dayOfWeek);
 
-    // Count completed exercises
-    let completed = 0;
-    let total = 0;
-    const prefix = `${dayKey}_${dayType}_`;
-    // Count by incrementing through indices until we don't find the key
-    for (let i = 0; i < 50; i++) {
-        const key = prefix + i;
-        if (key in completedExercises || document.querySelector(`[onclick*="${key}"]`)) {
-            total++;
-            if (completedExercises[key]) completed++;
-        } else if (i > 0) break;
-    }
-
-    // Alternative: count from DOM
+    // Count completed exercises from DOM
     const items = document.querySelectorAll('#workoutContent .exercise-item');
-    if (items.length > 0) {
-        total = items.length;
-        completed = document.querySelectorAll('#workoutContent .exercise-item.completed').length;
-    }
+    const total = items.length;
+    const completed = document.querySelectorAll('#workoutContent .exercise-item.completed').length;
 
     return syncToSheets({
         type: 'workout_log',
@@ -708,7 +693,7 @@ async function syncSupplements() {
     ['rx', 'morning', 'evening'].forEach(sectionKey => {
         const section = SUPPLEMENTS[sectionKey];
         section.items.forEach((item, idx) => {
-            const key = `${today}_${sectionKey}_${idx}`;
+            const key = `${today}_${sectionKey}_${slugify(item.name)}`;
             allSupps.push({
                 name: item.name,
                 dose: item.dose,
@@ -726,6 +711,10 @@ async function syncSupplements() {
 }
 
 let SUPPLEMENTS = JSON.parse(localStorage.getItem('apex_config_supplements') || 'null');
+
+function slugify(name) {
+    return name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+}
 
 let completedSupps = {};
 
@@ -752,8 +741,7 @@ function updateSuppsProgress() {
     let done = 0;
     dailyItems.forEach((item, i) => {
         const section = SUPPLEMENTS.rx.items.includes(item) ? 'rx' : SUPPLEMENTS.morning.items.includes(item) ? 'morning' : 'evening';
-        const idx = section === 'rx' ? i : section === 'morning' ? i - SUPPLEMENTS.rx.items.length : i - SUPPLEMENTS.rx.items.length - SUPPLEMENTS.morning.items.length;
-        if (completedSupps[`${today}_${section}_${idx}`]) done++;
+        if (completedSupps[`${today}_${section}_${slugify(item.name)}`]) done++;
     });
     const pct = dailyItems.length > 0 ? Math.round((done / dailyItems.length) * 100) : 0;
     const el = document.getElementById('suppsProgress');
@@ -791,7 +779,7 @@ function renderSupps() {
             </div>`;
 
         section.items.forEach((item, idx) => {
-            const key = `${today}_${sectionKey}_${idx}`;
+            const key = `${today}_${sectionKey}_${slugify(item.name)}`;
             const done = completedSupps[key];
             const clickable = isDaily;
             const dimmed = isHold || isFuture;
@@ -997,7 +985,7 @@ function renderDay() {
             </div>`;
 
         section.exercises.forEach(ex => {
-            const key = `${dayKey}_${dayType}_${exerciseIndex}`;
+            const key = `${dayKey}_${dayType}_${slugify(ex.name)}`;
             const done = completedExercises[key];
             html += `<div class="exercise-item ${done ? 'completed' : ''}" onclick="toggleExercise('${key}', this)">
                 <div class="checkbox"><span class="checkmark">&#x2713;</span></div>
@@ -1045,9 +1033,10 @@ function toggleExercise(key, el) {
 
 function updateProgress(dayKey, dayType, total) {
     let done = 0;
-    for (let i = 0; i < total; i++) {
-        if (completedExercises[`${dayKey}_${dayType}_${i}`]) done++;
-    }
+    const prefix = `${dayKey}_${dayType}_`;
+    Object.keys(completedExercises).forEach(k => {
+        if (k.startsWith(prefix) && completedExercises[k]) done++;
+    });
     const pct = total > 0 ? Math.round((done / total) * 100) : 0;
     document.getElementById('progressFill').style.width = pct + '%';
     document.getElementById('progressText').textContent = `${done} of ${total} exercises completed` + (pct === 100 ? ' — Nice work!' : '');
