@@ -23,6 +23,9 @@ The project also includes an optional Progressive Web App (PWA) that runs on iPh
 
 **The tracker is a nice-to-have, not a requirement.** Apex works fully without it — Claude maintains your complete coaching history across conversations. The PWA just adds structured daily data collection if you want granular tracking.
 
+<img src="screenshots/PWA-app.png" alt="Workout view" width="300" />
+<!--  #![Apex-screenshot](screenshots/PWA-app.png "Workout Tracker view") -->
+
 ---
 
 ## Getting Started: The Initial Coaching Conversation
