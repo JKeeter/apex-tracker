@@ -1,0 +1,1337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Apex">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23667eea' width='100' height='100' rx='20'/><text x='50' y='68' text-anchor='middle' fill='white' font-size='50' font-family='Arial' font-weight='bold'>A</text></svg>">
+    <title>Apex Workout</title>
+    <style>
+        :root {
+            --bg: #0f0f13;
+            --card: #1a1a24;
+            --card-border: #2a2a3a;
+            --accent: #667eea;
+            --accent-dim: rgba(102,126,234,0.15);
+            --green: #34d399;
+            --green-dim: rgba(52,211,153,0.15);
+            --yellow: #fbbf24;
+            --yellow-dim: rgba(251,191,36,0.15);
+            --red: #f87171;
+            --red-dim: rgba(248,113,113,0.15);
+            --text: #e4e4e7;
+            --text-dim: #71717a;
+            --text-bright: #ffffff;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            min-height: -webkit-fill-available;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        .app {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px 16px calc(env(safe-area-inset-bottom, 0px) + 110px);
+            padding-top: env(safe-area-inset-top, 20px);
+        }
+
+        .header {
+            text-align: center;
+            padding: 10px 0 20px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-bright);
+            letter-spacing: -0.5px;
+        }
+
+        .header .date {
+            font-size: 14px;
+            color: var(--text-dim);
+            margin-top: 4px;
+        }
+
+        .phase-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+
+        .phase-1-badge { background: var(--green-dim); color: var(--green); }
+        .phase-2-badge { background: var(--yellow-dim); color: var(--yellow); }
+        .phase-3-badge { background: var(--accent-dim); color: var(--accent); }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .stat-card .label {
+            font-size: 11px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-card .value {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text-bright);
+            margin-top: 2px;
+        }
+
+        .stat-card .unit {
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+
+        .day-type-selector {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .day-type-btn {
+            flex: 1;
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid var(--card-border);
+            background: var(--card);
+            color: var(--text-dim);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .day-type-btn.active {
+            border-color: var(--accent);
+            background: var(--accent-dim);
+            color: var(--accent);
+        }
+
+        .day-type-btn.rest-active {
+            border-color: var(--green);
+            background: var(--green-dim);
+            color: var(--green);
+        }
+
+        .workout-section {
+            margin-bottom: 16px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .section-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .section-icon.warmup { background: var(--yellow-dim); }
+        .section-icon.bag { background: var(--red-dim); }
+        .section-icon.kb { background: var(--accent-dim); }
+        .section-icon.core { background: var(--green-dim); }
+        .section-icon.cool { background: rgba(147,197,253,0.15); }
+        .section-icon.pill { background: rgba(168,85,247,0.15); }
+        .section-icon.moon { background: rgba(99,102,241,0.15); }
+        .section-icon.hold { background: var(--red-dim); }
+        .section-icon.later { background: var(--yellow-dim); }
+        .section-icon.rx { background: rgba(236,72,153,0.15); }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-bright);
+        }
+
+        .section-duration {
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-left: auto;
+        }
+
+        .exercise-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px;
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .exercise-item.completed {
+            opacity: 0.5;
+            border-color: var(--green);
+            background: var(--green-dim);
+        }
+
+        .checkbox {
+            width: 24px;
+            height: 24px;
+            min-width: 24px;
+            border-radius: 6px;
+            border: 2px solid var(--card-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 1px;
+            transition: all 0.2s;
+        }
+
+        .exercise-item.completed .checkbox {
+            background: var(--green);
+            border-color: var(--green);
+        }
+
+        .checkmark {
+            display: none;
+            color: white;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .exercise-item.completed .checkmark { display: block; }
+
+        .exercise-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text);
+            line-height: 1.4;
+        }
+
+        .exercise-detail {
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-top: 2px;
+        }
+
+        .exercise-time {
+            font-size: 12px;
+            color: var(--accent);
+            font-weight: 600;
+            margin-left: auto;
+            white-space: nowrap;
+            margin-top: 2px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: var(--card);
+            border-radius: 3px;
+            margin: 16px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--green));
+            border-radius: 3px;
+            transition: width 0.3s;
+        }
+
+        .progress-text {
+            font-size: 12px;
+            color: var(--text-dim);
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        .rest-day {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .rest-day .emoji { font-size: 48px; margin-bottom: 16px; }
+        .rest-day h2 { font-size: 24px; color: var(--text-bright); margin-bottom: 8px; }
+        .rest-day p { font-size: 14px; color: var(--text-dim); line-height: 1.5; }
+
+        .nav-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--card);
+            border-top: 1px solid var(--card-border);
+            display: flex;
+            justify-content: center;
+            gap: 4px;
+            padding: 10px 16px;
+            padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 18px);
+        }
+
+        .nav-btn {
+            padding: 8px 14px;
+            border-radius: 8px;
+            border: none;
+            background: transparent;
+            color: var(--text-dim);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .nav-btn.active {
+            background: var(--accent-dim);
+            color: var(--accent);
+        }
+
+        .week-selector {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .week-arrow {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 1px solid var(--card-border);
+            background: var(--card);
+            color: var(--text);
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .week-label {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-bright);
+            min-width: 100px;
+            text-align: center;
+        }
+
+        .log-section {
+            margin-top: 20px;
+        }
+
+        .log-input-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .log-input {
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            padding: 12px;
+        }
+
+        .log-input label {
+            display: block;
+            font-size: 11px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .log-input input, .log-input textarea {
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: var(--text-bright);
+            font-size: 18px;
+            font-weight: 600;
+            font-family: inherit;
+            outline: none;
+        }
+
+        .log-input textarea {
+            font-size: 14px;
+            font-weight: 400;
+            resize: none;
+            height: 60px;
+        }
+
+        .log-input.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .save-btn {
+            width: 100%;
+            padding: 14px;
+            border-radius: 10px;
+            border: none;
+            background: var(--accent);
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+
+        .save-btn:active { opacity: 0.8; }
+
+        .history-view { padding-top: 10px; }
+
+        .history-item {
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            padding: 14px;
+            margin-bottom: 10px;
+        }
+
+        .history-date {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--accent);
+            margin-bottom: 6px;
+        }
+
+        .history-stats {
+            display: flex;
+            gap: 16px;
+            font-size: 13px;
+            color: var(--text-dim);
+        }
+
+        .history-stats span { color: var(--text-bright); font-weight: 600; }
+
+        .history-notes {
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-top: 6px;
+            font-style: italic;
+        }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .total-time {
+            text-align: center;
+            margin: 16px 0;
+            font-size: 13px;
+            color: var(--text-dim);
+        }
+
+        .total-time strong {
+            color: var(--accent);
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+    <div class="header">
+        <h1>Apex Workout</h1>
+        <div class="date" id="dateDisplay"></div>
+        <div id="phaseBadge"></div>
+    </div>
+
+    <div class="tab-content active" id="workoutTab">
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="label">Week</div>
+                <div class="value" id="weekNum">1</div>
+                <div class="unit" id="weekPhase">Phase 1</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Day</div>
+                <div class="value" id="dayNum">1</div>
+                <div class="unit" id="dayName">Monday</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Streak</div>
+                <div class="value" id="streak">0</div>
+                <div class="unit">days</div>
+            </div>
+        </div>
+
+        <div class="week-selector">
+            <button class="week-arrow" onclick="changeDay(-1)">&#8249;</button>
+            <div class="week-label" id="weekDayLabel">Week 1 - Mon</div>
+            <button class="week-arrow" onclick="changeDay(1)">&#8250;</button>
+        </div>
+
+        <div class="day-type-selector" id="dayTypeSelector">
+            <button class="day-type-btn active" onclick="setDayType('standard')">Standard</button>
+            <button class="day-type-btn" onclick="setDayType('light')">Light</button>
+            <button class="day-type-btn" onclick="setDayType('rest')">Rest</button>
+        </div>
+
+        <div id="workoutContent"></div>
+
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-text" id="progressText">0 of 0 exercises completed</div>
+    </div>
+
+    <div class="tab-content" id="logTab">
+        <div class="header">
+            <h1>Daily Log</h1>
+            <div class="date" id="logDate"></div>
+        </div>
+        <div class="log-section">
+            <div class="log-input-group">
+                <div class="log-input">
+                    <label>Weight (lbs)</label>
+                    <input type="number" id="logWeight" placeholder="Weight">
+                </div>
+                <div class="log-input">
+                    <label>Energy (1-10)</label>
+                    <input type="number" id="logEnergy" placeholder="5" min="1" max="10">
+                </div>
+                <div class="log-input">
+                    <label>Resting HR</label>
+                    <input type="number" id="logHR" placeholder="80">
+                </div>
+                <div class="log-input">
+                    <label>Sleep (hrs)</label>
+                    <input type="number" id="logSleep" placeholder="7" step="0.5">
+                </div>
+                <div class="log-input">
+                    <label>Alcohol (drinks)</label>
+                    <input type="number" id="logAlcohol" placeholder="0">
+                </div>
+                <div class="log-input">
+                    <label>Workout Done</label>
+                    <input type="text" id="logWorkout" placeholder="Y / N / Partial">
+                </div>
+                <div class="log-input full-width">
+                    <label>Notes</label>
+                    <textarea id="logNotes" placeholder="How did you feel? Any symptoms? Supplements taken?"></textarea>
+                </div>
+            </div>
+            <button class="save-btn" onclick="saveLog()">Save Today's Log</button>
+        </div>
+
+        <div style="margin-top:30px;padding-top:20px;border-top:1px solid var(--card-border);">
+            <div class="section-header">
+                <div class="section-icon" style="background:rgba(102,126,234,0.15);">&#x2699;</div>
+                <span class="section-title">Google Sheets Sync</span>
+            </div>
+            <div class="log-input full-width" style="margin-top:10px;">
+                <label>Google Apps Script URL</label>
+                <input type="url" id="webhookUrl" placeholder="Paste your deployed script URL here" style="font-size:13px;font-weight:400;" oninput="setWebhookUrl(this.value)">
+            </div>
+            <div class="log-input full-width" style="margin-top:8px;">
+                <label>Secret Token (must match what's in your Apps Script)</label>
+                <input type="password" id="webhookToken" placeholder="Your secret passphrase" style="font-size:13px;font-weight:400;" oninput="setWebhookToken(this.value)">
+            </div>
+            <div style="font-size:12px;color:var(--text-dim);margin-top:8px;line-height:1.5;padding:0 4px;">
+                Both fields required. The token acts as a password — only requests with the matching token are accepted. Your data is rejected without it.
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-content" id="suppsTab">
+        <div class="header">
+            <h1>Daily Supplements</h1>
+            <div class="date">Tap to check off as you take them</div>
+        </div>
+        <div id="suppsContent"></div>
+    </div>
+
+    <div class="tab-content" id="historyTab">
+        <div class="header">
+            <h1>Progress</h1>
+            <div class="date">Your tracking history</div>
+        </div>
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="label">Start</div>
+                <div class="value" style="font-size:16px" id="startWeight">—</div>
+                <div class="unit">lbs</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Current</div>
+                <div class="value" style="font-size:16px" id="currentWeight">—</div>
+                <div class="unit">lbs</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Goal</div>
+                <div class="value" style="font-size:16px" id="goalWeight">—</div>
+                <div class="unit">lbs</div>
+            </div>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="weightProgress" style="width:0%"></div></div>
+        <div class="progress-text" id="weightProgressText">— lbs to go</div>
+        <div class="history-view" id="historyList"></div>
+    </div>
+</div>
+
+<div class="nav-bar">
+    <button class="nav-btn active" onclick="switchTab('workout')">Workout</button>
+    <button class="nav-btn" onclick="switchTab('supps')">Supps</button>
+    <button class="nav-btn" onclick="switchTab('log')">Log</button>
+    <button class="nav-btn" onclick="switchTab('history')">Progress</button>
+</div>
+
+<script>
+// ===== GOOGLE SHEETS SYNC =====
+let SHEETS_WEBHOOK_URL = localStorage.getItem('apex_webhook_url') || '';
+let SHEETS_TOKEN = localStorage.getItem('apex_webhook_token') || '';
+
+function setWebhookUrl(url) {
+    SHEETS_WEBHOOK_URL = url.trim();
+    localStorage.setItem('apex_webhook_url', SHEETS_WEBHOOK_URL);
+}
+
+function setWebhookToken(token) {
+    SHEETS_TOKEN = token.trim();
+    localStorage.setItem('apex_webhook_token', SHEETS_TOKEN);
+}
+
+async function syncToSheets(data) {
+    if (!SHEETS_WEBHOOK_URL || !SHEETS_TOKEN) return { status: 'no_url' };
+    try {
+        data.token = SHEETS_TOKEN;
+        const resp = await fetch(SHEETS_WEBHOOK_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify(data),
+            mode: 'no-cors'
+        });
+        return { status: 'ok' };
+    } catch(e) {
+        console.error('Sync failed:', e);
+        return { status: 'error', message: e.toString() };
+    }
+}
+
+async function syncDailyLog(logData) {
+    return syncToSheets({
+        type: 'daily_log',
+        ...logData
+    });
+}
+
+async function syncWorkoutCompletion() {
+    const dayKey = getDayKey(currentDayOffset);
+    const { week, dayOfWeek } = getWeekAndDay(currentDayOffset);
+    const phase = getPhase(week);
+    const dayType = currentDayType || getRecommendedType(week, dayOfWeek);
+
+    // Count completed exercises
+    let completed = 0;
+    let total = 0;
+    const prefix = `${dayKey}_${dayType}_`;
+    // Count by incrementing through indices until we don't find the key
+    for (let i = 0; i < 50; i++) {
+        const key = prefix + i;
+        if (key in completedExercises || document.querySelector(`[onclick*="${key}"]`)) {
+            total++;
+            if (completedExercises[key]) completed++;
+        } else if (i > 0) break;
+    }
+
+    // Alternative: count from DOM
+    const items = document.querySelectorAll('#workoutContent .exercise-item');
+    if (items.length > 0) {
+        total = items.length;
+        completed = document.querySelectorAll('#workoutContent .exercise-item.completed').length;
+    }
+
+    return syncToSheets({
+        type: 'workout_log',
+        date: dayKey,
+        week: week,
+        phase: phase.replace('phase', 'Phase '),
+        workoutType: dayType,
+        completed: completed,
+        total: total
+    });
+}
+
+async function syncSupplements() {
+    const today = new Date().toISOString().split('T')[0];
+    const allSupps = [];
+
+    ['rx', 'morning', 'evening'].forEach(sectionKey => {
+        const section = SUPPLEMENTS[sectionKey];
+        section.items.forEach((item, idx) => {
+            const key = `${today}_${sectionKey}_${idx}`;
+            allSupps.push({
+                name: item.name,
+                dose: item.dose,
+                time: item.time,
+                taken: !!completedSupps[key]
+            });
+        });
+    });
+
+    return syncToSheets({
+        type: 'supplement_log',
+        date: today,
+        supplements: allSupps
+    });
+}
+
+let SUPPLEMENTS = JSON.parse(localStorage.getItem('apex_config_supplements') || 'null');
+
+let completedSupps = {};
+
+function loadSuppsData() {
+    try {
+        completedSupps = JSON.parse(localStorage.getItem('apex_supps') || '{}');
+    } catch(e) { completedSupps = {}; }
+}
+
+function saveSuppsData() {
+    localStorage.setItem('apex_supps', JSON.stringify(completedSupps));
+}
+
+function toggleSupp(key, el) {
+    completedSupps[key] = !completedSupps[key];
+    saveSuppsData();
+    el.classList.toggle('completed');
+    updateSuppsProgress();
+}
+
+function updateSuppsProgress() {
+    const today = new Date().toISOString().split('T')[0];
+    const dailyItems = [...SUPPLEMENTS.rx.items, ...SUPPLEMENTS.morning.items, ...SUPPLEMENTS.evening.items];
+    let done = 0;
+    dailyItems.forEach((item, i) => {
+        const section = SUPPLEMENTS.rx.items.includes(item) ? 'rx' : SUPPLEMENTS.morning.items.includes(item) ? 'morning' : 'evening';
+        const idx = section === 'rx' ? i : section === 'morning' ? i - SUPPLEMENTS.rx.items.length : i - SUPPLEMENTS.rx.items.length - SUPPLEMENTS.morning.items.length;
+        if (completedSupps[`${today}_${section}_${idx}`]) done++;
+    });
+    const pct = dailyItems.length > 0 ? Math.round((done / dailyItems.length) * 100) : 0;
+    const el = document.getElementById('suppsProgress');
+    const txt = document.getElementById('suppsProgressText');
+    if (el) {
+        el.style.width = pct + '%';
+        txt.textContent = `${done} of ${dailyItems.length} daily supplements taken` + (pct === 100 ? ' — All done!' : '');
+    }
+}
+
+function renderSupps() {
+    const today = new Date().toISOString().split('T')[0];
+    const content = document.getElementById('suppsContent');
+    if (!SUPPLEMENTS) {
+        content.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--text-dim);"><p style="font-size:18px;margin-bottom:8px;">No supplement config loaded</p><p>Scan a config QR code to get started</p></div>';
+        return;
+    }
+    let html = '';
+
+    html += `<div class="progress-bar"><div class="progress-fill" id="suppsProgress"></div></div>`;
+    html += `<div class="progress-text" id="suppsProgressText"></div>`;
+
+    const sections = ['rx', 'morning', 'evening', 'asNeeded', 'onHold', 'tier2', 'tier2T', 'future'];
+
+    sections.forEach(sectionKey => {
+        const section = SUPPLEMENTS[sectionKey];
+        const isDaily = ['rx', 'morning', 'evening'].includes(sectionKey);
+        const isHold = sectionKey === 'onHold';
+        const isFuture = ['tier2', 'tier2T', 'future'].includes(sectionKey);
+
+        html += `<div class="workout-section" style="margin-top:16px;">
+            <div class="section-header">
+                <div class="section-icon ${section.icon}">${section.emoji}</div>
+                <span class="section-title">${section.name}</span>
+            </div>`;
+
+        section.items.forEach((item, idx) => {
+            const key = `${today}_${sectionKey}_${idx}`;
+            const done = completedSupps[key];
+            const clickable = isDaily;
+            const dimmed = isHold || isFuture;
+
+            html += `<div class="exercise-item ${done ? 'completed' : ''}" ${clickable ? `onclick="toggleSupp('${key}', this)"` : ''} style="${dimmed && !isHold ? 'opacity:0.6;' : ''} ${isHold ? 'border-color:var(--red);border-style:dashed;' : ''} ${!clickable ? 'cursor:default;' : ''}">
+                <div class="checkbox" style="${!clickable ? 'border-color:transparent;' : ''} ${isHold ? 'border-color:var(--red);' : ''}">
+                    ${isHold ? '<span style="color:var(--red);font-size:14px;font-weight:700;">&#x2717;</span>' :
+                      isFuture ? '<span style="color:var(--yellow);font-size:12px;">&#x23F3;</span>' :
+                      `<span class="checkmark">&#x2713;</span>`}
+                </div>
+                <div style="flex:1;">
+                    <div class="exercise-name">${item.name}</div>
+                    <div class="exercise-detail">${item.detail}</div>
+                </div>
+                <div class="exercise-time" style="${isHold ? 'color:var(--red);' : isFuture ? 'color:var(--yellow);' : ''}">${item.dose}</div>
+            </div>`;
+        });
+
+        html += '</div>';
+    });
+
+    content.innerHTML = html;
+    updateSuppsProgress();
+}
+
+const METRICS = JSON.parse(localStorage.getItem('apex_config_metrics') || '{}');
+const START_DATE = METRICS.startDate ? new Date(METRICS.startDate + 'T00:00:00') : new Date();
+const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const SHORT_DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+let WORKOUTS = JSON.parse(localStorage.getItem('apex_config_workouts') || 'null');
+
+// Schedule: maps week+dayOfWeek to recommended workout type
+function getRecommendedType(week, dayOfWeek) {
+    // dayOfWeek: 0=Sun, 1=Mon...6=Sat
+    if (dayOfWeek === 0) return 'rest'; // Sunday always rest
+
+    if (week <= 2) {
+        // Phase 1: Mon/Wed/Fri standard, Tue/Thu light, Sat-Sun rest
+        if (dayOfWeek === 6) return 'rest';
+        if ([1,3,5].includes(dayOfWeek)) return 'standard';
+        return 'light';
+    } else if (week <= 4) {
+        // Phase 2: Mon/Wed/Fri standard, Tue/Thu light, Sat hard
+        if (dayOfWeek === 6) return 'hard';
+        if ([1,3,5].includes(dayOfWeek)) return 'standard';
+        return 'light';
+    } else {
+        // Phase 3: Mon/Wed/Fri standard, Tue/Thu MTB (week 8+) or standard, Sat hard
+        if (dayOfWeek === 6) return 'hard';
+        if ([2,4].includes(dayOfWeek) && week >= 8) return 'mtb';
+        if ([1,3,5].includes(dayOfWeek)) return 'standard';
+        return 'standard';
+    }
+}
+
+function getPhase(week) {
+    if (week <= 2) return 'phase1';
+    if (week <= 4) return 'phase2';
+    return 'phase3';
+}
+
+function getPhaseName(week) {
+    if (week <= 2) return 'Phase 1 — Foundation';
+    if (week <= 4) return 'Phase 2 — Intensity';
+    return 'Phase 3 — Full Capacity';
+}
+
+let currentDayOffset = 0;
+let currentDayType = null;
+let completedExercises = {};
+
+function loadData() {
+    try {
+        completedExercises = JSON.parse(localStorage.getItem('apex_completed') || '{}');
+    } catch(e) { completedExercises = {}; }
+}
+
+function saveData() {
+    localStorage.setItem('apex_completed', JSON.stringify(completedExercises));
+}
+
+function getDateForOffset(offset) {
+    const d = new Date(START_DATE);
+    d.setDate(d.getDate() + offset);
+    return d;
+}
+
+function getDayKey(offset) {
+    const d = getDateForOffset(offset);
+    return d.toISOString().split('T')[0];
+}
+
+function getWeekAndDay(offset) {
+    const week = Math.floor(offset / 7) + 1;
+    const d = getDateForOffset(offset);
+    return { week: Math.min(week, 12), dayOfWeek: d.getDay(), date: d };
+}
+
+function init() {
+    loadData();
+    loadSuppsData();
+    // Calculate offset from start date to today
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const start = new Date(START_DATE);
+    start.setHours(0,0,0,0);
+    currentDayOffset = Math.max(0, Math.round((today - start) / (1000*60*60*24)));
+    if (currentDayOffset > 83) currentDayOffset = 83; // cap at 12 weeks
+
+    renderDay();
+    renderSupps();
+    renderHistory();
+    updateStreak();
+}
+
+function changeDay(delta) {
+    currentDayOffset = Math.max(0, Math.min(83, currentDayOffset + delta));
+    currentDayType = null;
+    renderDay();
+}
+
+function setDayType(type) {
+    currentDayType = type;
+    renderDay();
+}
+
+function renderDay() {
+    const { week, dayOfWeek, date } = getWeekAndDay(currentDayOffset);
+    const phase = getPhase(week);
+    const phaseName = getPhaseName(week);
+    const recommended = getRecommendedType(week, dayOfWeek);
+    const dayType = currentDayType || recommended;
+
+    document.getElementById('dateDisplay').textContent = date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+    document.getElementById('weekNum').textContent = week;
+    document.getElementById('weekPhase').textContent = phase.replace('phase','Phase ');
+    document.getElementById('dayNum').textContent = currentDayOffset + 1;
+    document.getElementById('dayName').textContent = DAYS[dayOfWeek];
+    document.getElementById('weekDayLabel').textContent = `Week ${week} - ${SHORT_DAYS[dayOfWeek]}`;
+
+    const badge = document.getElementById('phaseBadge');
+    const phaseNum = parseInt(phase.replace('phase',''));
+    badge.innerHTML = `<span class="phase-badge phase-${phaseNum}-badge">${phaseName}</span>`;
+
+    // Update day type buttons
+    const selector = document.getElementById('dayTypeSelector');
+    const availableTypes = getAvailableTypes(phase, recommended);
+    selector.innerHTML = '';
+    availableTypes.forEach(t => {
+        const btn = document.createElement('button');
+        btn.className = 'day-type-btn' + (dayType === t.key ? (t.key === 'rest' ? ' rest-active' : ' active') : '');
+        btn.textContent = t.label;
+        btn.onclick = () => setDayType(t.key);
+        selector.appendChild(btn);
+    });
+
+    const content = document.getElementById('workoutContent');
+
+    if (dayType === 'rest') {
+        content.innerHTML = `<div class="rest-day">
+            <div class="emoji">&#x1F9D8;</div>
+            <h2>Rest Day</h2>
+            <p>Recovery is where the gains happen.<br>Light stretching or a walk if you feel like it.</p>
+        </div>`;
+        document.getElementById('progressFill').style.width = '100%';
+        document.getElementById('progressText').textContent = 'Rest day — recovery is the workout';
+        return;
+    }
+
+    // Get workout data
+    if (!WORKOUTS) {
+        document.getElementById('workoutContent').innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--text-dim);"><p style="font-size:18px;margin-bottom:8px;">No workout config loaded</p><p>Scan a config QR code to get started</p></div>';
+        return;
+    }
+    let workout;
+    if (phase === 'phase1') {
+        workout = WORKOUTS.phase1[dayType] || WORKOUTS.phase1.standard;
+    } else if (phase === 'phase2') {
+        workout = WORKOUTS.phase2[dayType] || WORKOUTS.phase2.standard;
+    } else {
+        workout = WORKOUTS.phase3[dayType] || WORKOUTS.phase3.standard;
+    }
+
+    if (!workout) {
+        content.innerHTML = '<div class="rest-day"><h2>Workout not found</h2></div>';
+        return;
+    }
+
+    const dayKey = getDayKey(currentDayOffset);
+    let html = `<div class="total-time">Today's workout: <strong>${workout.totalTime} min</strong></div>`;
+    let exerciseIndex = 0;
+
+    workout.sections.forEach(section => {
+        html += `<div class="workout-section">
+            <div class="section-header">
+                <div class="section-icon ${section.icon}">
+                    ${section.icon === 'warmup' ? '&#x1F525;' : section.icon === 'bag' ? '&#x1F94A;' : section.icon === 'kb' ? '&#x1F4AA;' : section.icon === 'core' ? '&#x1F3AF;' : '&#x2744;'}
+                </div>
+                <span class="section-title">${section.name}</span>
+                <span class="section-duration">${section.duration}</span>
+            </div>`;
+
+        section.exercises.forEach(ex => {
+            const key = `${dayKey}_${dayType}_${exerciseIndex}`;
+            const done = completedExercises[key];
+            html += `<div class="exercise-item ${done ? 'completed' : ''}" onclick="toggleExercise('${key}', this)">
+                <div class="checkbox"><span class="checkmark">&#x2713;</span></div>
+                <div>
+                    <div class="exercise-name">${ex.name}</div>
+                    <div class="exercise-detail">${ex.detail}</div>
+                </div>
+                <div class="exercise-time">${ex.time}</div>
+            </div>`;
+            exerciseIndex++;
+        });
+
+        html += '</div>';
+    });
+
+    content.innerHTML = html;
+    updateProgress(dayKey, dayType, exerciseIndex);
+}
+
+function getAvailableTypes(phase, recommended) {
+    const types = [];
+    if (phase === 'phase1') {
+        types.push({ key: 'standard', label: 'Standard (20m)' });
+        types.push({ key: 'light', label: 'Light (10m)' });
+    } else if (phase === 'phase2') {
+        types.push({ key: 'standard', label: 'Standard (20m)' });
+        types.push({ key: 'light', label: 'Light (15m)' });
+        types.push({ key: 'hard', label: 'Hard (22m)' });
+    } else {
+        types.push({ key: 'standard', label: 'Standard (20m)' });
+        types.push({ key: 'mtb', label: 'MTB Prep (20m)' });
+        types.push({ key: 'light', label: 'Light (15m)' });
+    }
+    types.push({ key: 'rest', label: 'Rest' });
+    return types;
+}
+
+function toggleExercise(key, el) {
+    completedExercises[key] = !completedExercises[key];
+    saveData();
+    el.classList.toggle('completed');
+    const dayKey = getDayKey(currentDayOffset);
+    const dayType = currentDayType || getRecommendedType(...Object.values(getWeekAndDay(currentDayOffset)));
+    const total = document.querySelectorAll('.exercise-item').length;
+    updateProgress(dayKey, dayType, total);
+    updateStreak();
+}
+
+function updateProgress(dayKey, dayType, total) {
+    let done = 0;
+    for (let i = 0; i < total; i++) {
+        if (completedExercises[`${dayKey}_${dayType}_${i}`]) done++;
+    }
+    const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+    document.getElementById('progressFill').style.width = pct + '%';
+    document.getElementById('progressText').textContent = `${done} of ${total} exercises completed` + (pct === 100 ? ' — Nice work!' : '');
+}
+
+function updateStreak() {
+    let streak = 0;
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    for (let i = currentDayOffset; i >= 0; i--) {
+        const dk = getDayKey(i);
+        const { week, dayOfWeek } = getWeekAndDay(i);
+        const rec = getRecommendedType(week, dayOfWeek);
+        if (rec === 'rest') { streak++; continue; }
+        const hasAny = Object.keys(completedExercises).some(k => k.startsWith(dk) && completedExercises[k]);
+        if (hasAny) streak++;
+        else break;
+    }
+    document.getElementById('streak').textContent = streak;
+}
+
+function switchTab(tab) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(tab + 'Tab').classList.add('active');
+    event.target.classList.add('active');
+    if (tab === 'supps') renderSupps();
+    if (tab === 'log') {
+        document.getElementById('logDate').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+        loadLogForToday();
+        document.getElementById('webhookUrl').value = SHEETS_WEBHOOK_URL || '';
+        document.getElementById('webhookToken').value = SHEETS_TOKEN || '';
+    }
+    if (tab === 'history') renderHistory();
+}
+
+function loadLogForToday() {
+    const key = new Date().toISOString().split('T')[0];
+    try {
+        const log = JSON.parse(localStorage.getItem('apex_log_' + key) || '{}');
+        document.getElementById('logWeight').value = log.weight || '';
+        document.getElementById('logEnergy').value = log.energy || '';
+        document.getElementById('logHR').value = log.hr || '';
+        document.getElementById('logSleep').value = log.sleep || '';
+        document.getElementById('logAlcohol').value = log.alcohol || '';
+        document.getElementById('logWorkout').value = log.workout || '';
+        document.getElementById('logNotes').value = log.notes || '';
+    } catch(e) {}
+}
+
+async function saveLog() {
+    const key = new Date().toISOString().split('T')[0];
+    const log = {
+        date: key,
+        weight: document.getElementById('logWeight').value,
+        energy: document.getElementById('logEnergy').value,
+        hr: document.getElementById('logHR').value,
+        sleep: document.getElementById('logSleep').value,
+        alcohol: document.getElementById('logAlcohol').value,
+        workout: document.getElementById('logWorkout').value,
+        notes: document.getElementById('logNotes').value
+    };
+    localStorage.setItem('apex_log_' + key, JSON.stringify(log));
+
+    // Track all log dates
+    let dates = JSON.parse(localStorage.getItem('apex_log_dates') || '[]');
+    if (!dates.includes(key)) {
+        dates.push(key);
+        dates.sort();
+        localStorage.setItem('apex_log_dates', JSON.stringify(dates));
+    }
+
+    const btn = document.querySelector('.save-btn');
+    btn.textContent = 'Saving...';
+
+    // Sync to Google Sheets
+    const result = await syncDailyLog(log);
+    await syncWorkoutCompletion();
+    await syncSupplements();
+
+    if (result.status === 'no_url') {
+        btn.textContent = 'Saved locally (no Sheets link)';
+        btn.style.background = '#fbbf24';
+    } else {
+        btn.textContent = 'Saved + Synced!';
+        btn.style.background = '#34d399';
+    }
+    setTimeout(() => { btn.textContent = 'Save Today\'s Log'; btn.style.background = ''; }, 2000);
+    renderHistory();
+}
+
+function renderHistory() {
+    const dates = JSON.parse(localStorage.getItem('apex_log_dates') || '[]').reverse();
+    const list = document.getElementById('historyList');
+    let html = '';
+    let latestWeight = METRICS.startWeight || 0;
+
+    const sw = document.getElementById('startWeight');
+    const gw = document.getElementById('goalWeight');
+    if (sw) sw.textContent = METRICS.startWeight || '—';
+    if (gw) gw.textContent = METRICS.goalWeight || '—';
+
+    dates.forEach(d => {
+        try {
+            const log = JSON.parse(localStorage.getItem('apex_log_' + d) || '{}');
+            if (log.weight) latestWeight = parseFloat(log.weight);
+            const dateObj = new Date(d + 'T12:00:00');
+            html += `<div class="history-item">
+                <div class="history-date">${dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</div>
+                <div class="history-stats">
+                    ${log.weight ? `Wt: <span>${log.weight}</span> lbs` : ''}
+                    ${log.energy ? `&nbsp;&nbsp;Energy: <span>${log.energy}/10</span>` : ''}
+                    ${log.hr ? `&nbsp;&nbsp;HR: <span>${log.hr}</span>` : ''}
+                    ${log.sleep ? `&nbsp;&nbsp;Sleep: <span>${log.sleep}h</span>` : ''}
+                    ${log.alcohol ? `&nbsp;&nbsp;Drinks: <span>${log.alcohol}</span>` : ''}
+                </div>
+                ${log.notes ? `<div class="history-notes">${log.notes}</div>` : ''}
+            </div>`;
+        } catch(e) {}
+    });
+
+    list.innerHTML = html || '<div style="text-align:center;color:var(--text-dim);padding:40px;">No logs yet. Start tracking in the Log tab.</div>';
+
+    document.getElementById('currentWeight').textContent = latestWeight || '—';
+    const startW = METRICS.startWeight || 0;
+    const goalW = METRICS.goalWeight || 0;
+    const totalToLose = startW - goalW;
+    const lost = startW - latestWeight;
+    const pct = totalToLose > 0 ? Math.max(0, Math.min(100, (lost / totalToLose) * 100)) : 0;
+    document.getElementById('weightProgress').style.width = pct + '%';
+    const remaining = goalW > 0 ? Math.max(0, latestWeight - goalW) : 0;
+    document.getElementById('weightProgressText').textContent = goalW > 0 ? `${remaining} lbs to go` : '— lbs to go';
+}
+
+// --- Config Import System ---
+async function decompressConfig(base64url) {
+    // Convert base64url to standard base64
+    let b64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
+    while (b64.length % 4) b64 += '=';
+    const binary = atob(b64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+    const text = await new Response(stream).text();
+    return JSON.parse(text);
+}
+
+function diffConfig(type, oldData, newData) {
+    const changes = [];
+    if (type === 'supplements') {
+        const oldSupps = oldData?.supplements || {};
+        const newSupps = newData?.supplements || {};
+        const allSections = new Set([...Object.keys(oldSupps), ...Object.keys(newSupps)]);
+        allSections.forEach(section => {
+            const oldItems = (oldSupps[section]?.items || []).map(i => i.name + '|' + i.dose);
+            const newItems = (newSupps[section]?.items || []).map(i => i.name + '|' + i.dose);
+            newItems.forEach(item => {
+                if (!oldItems.includes(item)) {
+                    const name = item.split('|')[0];
+                    const existing = oldItems.find(o => o.split('|')[0] === name);
+                    changes.push(existing ? { type: 'changed', text: name } : { type: 'added', text: name });
+                }
+            });
+            oldItems.forEach(item => {
+                const name = item.split('|')[0];
+                if (!newItems.find(n => n.split('|')[0] === name)) {
+                    changes.push({ type: 'removed', text: name });
+                }
+            });
+        });
+        // Check metrics changes
+        const oldM = oldData?.metrics || {};
+        const newM = newData?.metrics || {};
+        if (oldM.startWeight !== newM.startWeight) changes.push({ type: 'changed', text: `Start weight: ${newM.startWeight} lbs` });
+        if (oldM.goalWeight !== newM.goalWeight) changes.push({ type: 'changed', text: `Goal weight: ${newM.goalWeight} lbs` });
+        if (oldM.startDate !== newM.startDate) changes.push({ type: 'changed', text: `Start date: ${newM.startDate}` });
+    } else if (type === 'workouts') {
+        const oldPhases = Object.keys(oldData || {});
+        const newPhases = Object.keys(newData || {});
+        newPhases.forEach(phase => {
+            if (!oldPhases.includes(phase)) changes.push({ type: 'added', text: phase });
+            else {
+                const oldTypes = Object.keys(oldData[phase] || {});
+                const newTypes = Object.keys(newData[phase] || {});
+                newTypes.forEach(t => {
+                    if (!oldTypes.includes(t)) changes.push({ type: 'added', text: `${phase} / ${t}` });
+                    else if (JSON.stringify(oldData[phase][t]) !== JSON.stringify(newData[phase][t])) changes.push({ type: 'changed', text: `${phase} / ${t}` });
+                });
+                oldTypes.forEach(t => {
+                    if (!newTypes.includes(t)) changes.push({ type: 'removed', text: `${phase} / ${t}` });
+                });
+            }
+        });
+        oldPhases.forEach(phase => {
+            if (!newPhases.includes(phase)) changes.push({ type: 'removed', text: phase });
+        });
+    }
+    return changes;
+}
+
+function showImportModal(type, newConfig) {
+    const label = type === 'supplements' ? 'Supplements & Metrics' : 'Workouts';
+    let oldData;
+    if (type === 'supplements') {
+        const oldSupps = JSON.parse(localStorage.getItem('apex_config_supplements') || 'null');
+        const oldMetrics = JSON.parse(localStorage.getItem('apex_config_metrics') || '{}');
+        oldData = oldSupps ? { supplements: oldSupps, metrics: oldMetrics } : null;
+    } else {
+        oldData = JSON.parse(localStorage.getItem('apex_config_workouts') || 'null');
+    }
+
+    const isFirstImport = !oldData;
+    const changes = isFirstImport ? [] : diffConfig(type, oldData, newConfig);
+
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;';
+
+    let changesHtml = '';
+    if (isFirstImport) {
+        changesHtml = '<div style="color:var(--green);padding:8px 0;">Loading initial configuration</div>';
+    } else if (changes.length === 0) {
+        changesHtml = '<div style="color:var(--text-dim);padding:8px 0;">No changes detected</div>';
+    } else {
+        changesHtml = changes.map(c => {
+            const icon = c.type === 'added' ? '+' : c.type === 'removed' ? '−' : '~';
+            const color = c.type === 'added' ? 'var(--green)' : c.type === 'removed' ? 'var(--red)' : 'var(--yellow)';
+            return `<div style="color:${color};padding:2px 0;">${icon} ${c.text}</div>`;
+        }).join('');
+    }
+
+    overlay.innerHTML = `
+        <div style="background:var(--card);border:1px solid var(--card-border);border-radius:16px;padding:24px;max-width:350px;width:100%;">
+            <div style="font-size:18px;font-weight:700;color:var(--text-bright);margin-bottom:16px;">
+                ${isFirstImport ? 'Import' : 'Update'} ${label}?
+            </div>
+            <div style="max-height:200px;overflow-y:auto;margin-bottom:12px;font-size:14px;font-family:monospace;">
+                ${changesHtml}
+            </div>
+            <div style="font-size:12px;color:var(--text-dim);margin-bottom:20px;">
+                Your check-off history will be preserved.
+            </div>
+            <div style="display:flex;gap:12px;">
+                <button id="importCancel" style="flex:1;padding:12px;border-radius:10px;border:1px solid var(--card-border);background:transparent;color:var(--text);font-size:16px;cursor:pointer;">Cancel</button>
+                <button id="importConfirm" style="flex:1;padding:12px;border-radius:10px;border:none;background:var(--accent);color:white;font-size:16px;font-weight:600;cursor:pointer;">${isFirstImport ? 'Import' : 'Update'}</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    document.getElementById('importCancel').onclick = () => {
+        overlay.remove();
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+    };
+
+    document.getElementById('importConfirm').onclick = () => {
+        if (type === 'supplements') {
+            localStorage.setItem('apex_config_supplements', JSON.stringify(newConfig.supplements));
+            localStorage.setItem('apex_config_metrics', JSON.stringify(newConfig.metrics));
+            SUPPLEMENTS = newConfig.supplements;
+        } else {
+            localStorage.setItem('apex_config_workouts', JSON.stringify(newConfig));
+            WORKOUTS = newConfig;
+        }
+        overlay.remove();
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+        // Re-render current view
+        renderSupps();
+        renderDay();
+        renderHistory();
+    };
+}
+
+async function detectConfigFragment() {
+    const hash = window.location.hash;
+    if (!hash || hash.length < 4) return;
+
+    const param = hash.substring(1); // remove #
+    let type, data;
+
+    if (param.startsWith('s=')) {
+        type = 'supplements';
+        data = param.substring(2);
+    } else if (param.startsWith('w=')) {
+        type = 'workouts';
+        data = param.substring(2);
+    } else {
+        return;
+    }
+
+    try {
+        const config = await decompressConfig(data);
+        showImportModal(type, config);
+    } catch (e) {
+        console.error('Config import failed:', e);
+        alert('Failed to read config from URL. The QR code may be damaged.');
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+}
+
+init();
+detectConfigFragment();
+</script>
+</body>
+</html>
